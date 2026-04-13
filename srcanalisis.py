@@ -7,170 +7,170 @@ Original file is located at
     https://colab.research.google.com/drive/1cD_uxR9kgGSFSBiXkbnirAVPGMjz7KxZ
 """
 
-# !pip install prince  # Instala la librería prince (para análisis FAMD)
+## codigo completo-------------------------------------------------------------
+#from google.colab import files  # Importa herramienta para subir archivos en Colab
+#uploaded = files.upload()  # Permite subir el archivo desde tu computador
 
-import pandas as pd  # Importa pandas para manejo de datos
-import numpy as np  # Importa numpy para operaciones numéricas
-import matplotlib.pyplot as plt  # Importa matplotlib para gráficos básicos
-import seaborn as sns  # Importa seaborn para gráficos estadísticos
-import prince  # Importa prince para análisis FAMD
-from sklearn.cluster import KMeans # Importa KMeans para clustering
-from sklearn.metrics import silhouette_score, davies_bouldin_score  # Importa métricas de evaluación
+#!pip install prince  # Instala la librería prince para FAMD
 
-# CARGA DE DATOS
-datos = pd.read_excel("Bird migration dataset.xls")  # Carga el archivo Excel en un DataFrame
+import pandas as pd  # Para manipulación de datos
+import numpy as np  # Para operaciones numéricas
+import matplotlib.pyplot as plt  # Para gráficos
+import seaborn as sns  # Para gráficos estadísticos
+import prince  # Librería para FAMD (datos mixtos)
+from sklearn.cluster import KMeans  # Clustering
+from sklearn.metrics import silhouette_score, davies_bouldin_score  # Métricas
 
-# LIMPIEZA DE COLUMNAS
-datos.columns = (  # Modifica los nombres de las columnas
-    datos.columns  # Toma las columnas originales
-    .str.strip()  # Elimina espacios al inicio y final
-    .str.lower()   # Convierte todo a minúsculas
-    .str.replace(" ", "_")  # Reemplaza espacios por guiones bajos
-    .str.replace(r"[^\w]", "", regex=True)  # Elimina caracteres especiales
+datos = pd.read_excel("Bird migration dataset.xls")  # Carga el dataset
+
+datos.columns = (  # Limpieza de nombres de columnas
+    datos.columns  # Selecciona columnas
+    .str.strip()  # Quita espacios
+    .str.lower()  # Minúsculas
+    .str.replace(" ", "_")  # Reemplaza espacios
+    .str.replace(r"[^\w]", "", regex=True)  # Quita símbolos
 )
 
-print(datos.columns)                 # Imprime los nombres de las columnas ya limpias
+print(datos.columns)  # Muestra columnas limpias
 
-#  RENOMBRAR COLUMNAS
-datos = datos.rename(columns={  # Renombra columnas específicas
-    "gps_yy": "lat",  # Cambia gps_yy a lat
-    "gps_xx": "lon",  # Cambia gps_xx a lon
-    "migration_start_month": "inicio_mes",  # Cambia nombre a inicio_mes
-    "migration_end_month": "fin_mes",  # Cambia nombre a fin_mes
-    "migration_start_year": "inicio_año",  # Cambia nombre a inicio_año
-    "migration_end_year": "fin_año",  # Cambia nombre a fin_año
-    "migration_nodes": "nodo",  # Cambia nombre a nodo
-    "migratory_route_codes": "ruta_codigo",  # Cambia nombre a ruta_codigo
+datos = datos.rename(columns={  # Renombrar columnas
+    "gps_yy": "lat",  # Latitud
+    "gps_xx": "lon",  # Longitud
+    "migration_start_month": "inicio_mes",  # Mes inicio
+    "migration_end_month": "fin_mes",  # Mes fin
+    "migration_start_year": "inicio_año",  # Año inicio
+    "migration_end_year": "fin_año",  # Año fin
+    "migration_nodes": "nodo",  # Nodo
+    "migratory_route_codes": "ruta_codigo",  # Código ruta
+    "continents_1__north_america_2__south_america_3__europe_4__africa_5__asia_6__oceania": "continente",  # Continente
+    "migration_routes_1__north_americanorth_america_2__south_americasouth_america_3__europeeurope_4__africaafrica_5__asiaasia_6__oceaniaoceania_7__europeafrica_8__africaeurope_9__north_americasouth_america_10__south_americanorth_america_11__europeasia_12__asiaeurope_13__asiaafrica_14__africaasia_15__europenorth_america_16__north_americaeurope_17__asiaoceania_18__oceaniaasia_19__north_americaoceania_20__oceanianorth_america_21__north_americaasia": "ruta",  # Ruta
+    "migration_patterns_1__intercontinental_migration_2__intracontinental_migration": "inter_intra_continente"  # Tipo migración
 })
 
-#  LIMPIEZA DE COORDENADAS
-datos["lat"] = datos["lat"].astype(str)  # Convierte latitud a string
-datos["lat"] = datos["lat"].str.replace(",", ".")  # Reemplaza coma por punto
-datos["lat"] = datos["lat"].astype(float)  # Convierte a número float
+datos["lat"] = datos["lat"].astype(str)  # Lat a string
+datos["lat"] = datos["lat"].str.replace(",", ".")  # Cambia coma por punto
+datos["lat"] = datos["lat"].astype(float)  # A float
 
-datos["lon"] = datos["lon"].astype(str)  # Convierte longitud a string
-datos["lon"] = datos["lon"].str.replace(",", ".")  # Reemplaza coma por punto
-datos["lon"] = datos["lon"].astype(float)  # Convierte a float
+datos["lon"] = datos["lon"].astype(str)  # Lon a string
+datos["lon"] = datos["lon"].str.replace(",", ".")  # Cambia coma
+datos["lon"] = datos["lon"].astype(float)  # A float
 
-#  CONVERSIÓN NUMÉRICA
-datos["inicio_mes"] = pd.to_numeric(datos["inicio_mes"], errors="coerce")  # Convierte a número
-datos["fin_mes"] = pd.to_numeric(datos["fin_mes"], errors="coerce")  # Convierte a número
-datos["inicio_año"] = pd.to_numeric(datos["inicio_año"], errors="coerce")  # Convierte a número
-datos["fin_año"] = pd.to_numeric(datos["fin_año"], errors="coerce") # Convierte a número
+datos["inicio_mes"] = pd.to_numeric(datos["inicio_mes"], errors="coerce")  # A numérico
+datos["fin_mes"] = pd.to_numeric(datos["fin_mes"], errors="coerce")  # A numérico
+datos["inicio_año"] = pd.to_numeric(datos["inicio_año"], errors="coerce")  # A numérico
+datos["fin_año"] = pd.to_numeric(datos["fin_año"], errors="coerce")  # A numérico
 
-# ELIMINAR NULOS
-datos = datos.dropna(subset=["lat", "lon"])  # Elimina filas sin coordenadas
+datos = datos.dropna(subset=["lat", "lon"])  # Elimina nulos
 
-#  CREACIÓN DE FECHAS
-datos["fecha_inicio"] = pd.to_datetime(  # Crea fecha de inicio
-    dict(year=datos["inicio_año"], month=datos["inicio_mes"], day=1)  # Usa día fijo = 1
+datos["fecha_inicio"] = pd.to_datetime(dict(year=datos["inicio_año"], month=datos["inicio_mes"], day=1))  # Fecha inicio
+datos["fecha_fin"] = pd.to_datetime(dict(year=datos["fin_año"], month=datos["fin_mes"], day=1))  # Fecha fin
+
+datos["duracion_migracion"] = (  # Duración en meses
+    (datos["fecha_fin"].dt.year - datos["fecha_inicio"].dt.year) * 12 +
+    (datos["fecha_fin"].dt.month - datos["fecha_inicio"].dt.month)
 )
 
-datos["fecha_fin"] = pd.to_datetime(  # Crea fecha de fin
-    dict(year=datos["fin_año"], month=datos["fin_mes"], day=1)  # Usa día fijo = 1
-)
+print(datos.info())  # Info dataset
 
-#  DURACIÓN
-datos["duracion_migracion"] = (  # Calcula duración en meses
-    (datos["fecha_fin"].dt.year - datos["fecha_inicio"].dt.year) * 12 +  # Diferencia en años * 12
-    (datos["fecha_fin"].dt.month - datos["fecha_inicio"].dt.month  # Suma diferencia en meses
-)
-
-print(datos.info())  # Muestra información del dataset
-
-#  GRÁFICO DISPERSIÓN
-plt.figure()  # Crea figura
-scatter = plt.scatter(datos["lon"], datos["lat"], c=datos["inicio_mes"])  # Grafico scatter
+plt.figure()  # Figura
+scatter = plt.scatter(datos["lon"], datos["lat"], c=datos["inicio_mes"])  # Scatter
 plt.title("Distribución espacial según mes de inicio")  # Título
-plt.xlabel("Longitud")  # Etiqueta eje X
-plt.ylabel("Latitud")  # Etiqueta eje Y
-plt.colorbar(scatter)  # Barra de color
-plt.show() # Muestra gráfico
+plt.xlabel("Longitud")  # X
+plt.ylabel("Latitud")  # Y
+plt.colorbar(scatter)  # Barra color
+plt.show()  # Mostrar
 
-#  MAPEO DE VARIABLES
-datos["continente"] = datos["continente"].map({  # Convierte códigos a nombres
-    1: "North America",
-    2: "South America",
-    3: "Europe",
-    4: "Africa",
-    5: "Asia",
-    6: "Oceania"
-})
+datos["continente"] = datos["continente"].map({1:"North America",2:"South America",3:"Europe",4:"Africa",5:"Asia",6:"Oceania"})  # Map continentes
+datos["inter_intra_continente"] = datos["inter_intra_continente"].map({1:"Intercontinental",2:"Intracontinental"})  # Tipo migración
 
-datos["inter_intra_continente"] = datos["inter_intra_continente"].map({  # Tipo migración
-    1: "Intercontinental",
-    2: "Intracontinental"
-})
+def poner_valores(ax, total):  # Función etiquetas
+    for p in ax.patches:  # Barras
+        altura = p.get_height()  # Altura
+        if altura > 0:  # Validación
+            porcentaje = 100 * altura / total  # %
+            ax.annotate(f'{porcentaje:.3f}%', (p.get_x()+p.get_width()/2., altura+0.5), ha='center', va='bottom')  # Texto
 
-#  FUNCIÓN DE ETIQUETAS
-def poner_valores(ax, total):  # Define función para mostrar porcentajes
-    for p in ax.patches: # Recorre cada barra
-        altura = p.get_height()  # Obtiene altura
-        if altura > 0:  # Verifica valor válido
-            porcentaje = 100 * altura / total  # Calcula porcentaje
-            ax.annotate(f'{porcentaje:.3f}%',  # Texto a mostrar
-                        (p.get_x() + p.get_width() / 2., altura + 0.5),  # Posición
-                        ha='center', va='bottom')  # Alineación
+plt.figure(figsize=(12,6))  # Figura rutas
+datos_ruta = datos["ruta"].dropna()  # Limpia nulos
+orden = datos_ruta.value_counts().index  # Orden
+ax = sns.countplot(x=datos_ruta, order=orden)  # Gráfico
+poner_valores(ax, len(datos_ruta))  # Etiquetas
+plt.title("Porcentaje por ruta migratoria")  # Título
+plt.xticks(rotation=90)  # Rotación
+ax.set_ylabel("")  # Quita eje Y
+ax.set_yticks([])  # Quita valores Y
+sns.despine(left=True)  # Quita línea
+plt.tight_layout()  # Ajuste
+plt.show()  # Mostrar
 
-#  CLUSTERING
-datos_famd = datos.copy()  # Copia de datos
+# ===================== FAMD =====================
 
-numericas = ["lat", "lon", "duracion_migracion"]  # Variables numéricas
-categoricas = ["bird_species", "ruta", "inter_intra_continente"]  # Variables categóricas
+datos_famd = datos.copy()  # Copia
 
-datos_famd = datos_famd[numericas + categoricas].dropna()  # Elimina nulos
+numericas = ["lat", "lon", "duracion_migracion"]  # Numéricas
+categoricas = ["bird_species", "ruta", "inter_intra_continente", "countries", "nodo", "fecha_inicio", "fecha_fin"]  # Categóricas
 
-for col in categoricas:   # Recorre columnas categóricas
-    datos_famd[col] = datos_famd[col].astype(str)  # Convierte a string
+variables = numericas + categoricas  # Todas
 
-datos_famd[numericas] = datos_famd[numericas].apply(pd.to_numeric)  # Convierte a numérico
+datos_famd = datos_famd[variables].dropna()  # Quita nulos
 
-famd = prince.FAMD(n_components=6, random_state=42)  # Crea modelo FAMD
-famd = famd.fit(datos_famd)            # Ajusta modelo
+for col in categoricas:  # Convierte categóricas
+    datos_famd[col] = datos_famd[col].astype(str)
 
-datos_famd_trans = famd.transform(datos_famd)  # Transforma datos
+datos_famd[numericas] = datos_famd[numericas].apply(pd.to_numeric)  # Numéricas
 
-#  KMEANS
-X_cluster = datos_famd_trans.iloc[:, :5]  # Selecciona dimensiones
+famd = prince.FAMD(n_components=6, random_state=42)  # Modelo
+famd = famd.fit(datos_famd)  # Entrena
 
-kmeans = KMeans(n_clusters=2, random_state=42)  # Crea modelo
-clusters = kmeans.fit_predict(X_cluster)        # Entrena modelo
+datos_famd_trans = famd.transform(datos_famd)  # Transformación
 
-datos_famd["cluster"] = clusters               # Guarda clusters
+eigenvalues = famd.eigenvalues_  # Eigenvalues
+varianza = eigenvalues / eigenvalues.sum()  # Varianza
 
-#  MÉTRICAS
-sil = silhouette_score(X_cluster, clusters)  # Calcula silhouette
-db = davies_bouldin_score(X_cluster, clusters)  # Calcula DB index
+plt.figure()  # Figura
+plt.bar(range(1, len(varianza)+1), varianza)  # Barras
+plt.plot(range(1, len(varianza)+1), pd.Series(varianza).cumsum(), marker='o')  # Acumulado
+plt.title("Varianza explicada (FAMD)")  # Título
+plt.show()  # Mostrar
 
-print("Silhouette:", sil)  # Imprime resultado
-print("Davies-Bouldin:", db)  # Imprime resultado
+contrib = famd.column_contributions_  # Contribuciones
 
-class AnalisisMigracion:
+print(contrib)  # Mostrar
 
-    def __init__(self, ruta_archivo):
-        self.ruta = ruta_archivo
-        self.datos = None
+plt.figure(figsize=(8,5))  # Figura
+sns.heatmap(contrib, cmap="Blues")  # Heatmap
+plt.title("Contribución de variables")  # Título
+plt.show()  # Mostrar
 
-    def cargar_datos(self):
-        self.datos = pd.read_excel(self.ruta)
+print("\nINTERPRETACIÓN")  # Texto
 
-    def limpiar_datos(self):
-        # aquí va toda tu limpieza
-        pass
+for i in range(4):  # 4 dimensiones
+    print(f"\nDim {i+1}")  # Título
+    print(contrib.iloc[:, i].sort_values(ascending=False).head(5))  # Top variables
 
-    def analizar(self):
-        # aquí FAMD + clustering
-        pass
+X_cluster = datos_famd_trans.iloc[:, :5]  # Dimensiones
 
-    def graficar(self):
-        # aquí tus gráficos
-        pass
+kmeans = KMeans(n_clusters=2, random_state=42)  # Modelo
+clusters = kmeans.fit_predict(X_cluster)  # Entrena
 
+datos_famd["cluster"] = clusters  # Guarda
 
-# EJECUCIÓN
-if __name__ == "__main__":
-    analisis = AnalisisMigracion("Bird migration dataset.xls")
-    analisis.cargar_datos()
-    analisis.limpiar_datos()
-    analisis.analizar()
-    analisis.graficar()
+sil = silhouette_score(X_cluster, clusters)  # Silhouette
+db = davies_bouldin_score(X_cluster, clusters)  # DB
+
+print("Silhouette:", sil)  # Mostrar
+print("Davies-Bouldin:", db)  # Mostrar
+
+plt.figure()  # Figura
+plt.scatter(X_cluster.iloc[:,0], X_cluster.iloc[:,1], c=clusters)  # Scatter
+plt.title("Clusters en espacio FAMD")  # Título
+plt.show()  # Mostrar
+
+for c in datos_famd["cluster"].unique():  # Recorrer clusters
+    print(f"\nCLUSTER {c}")  # Título
+    subset = datos_famd[datos_famd["cluster"] == c]  # Filtra
+    print("Tamaño:", len(subset))  # Tamaño
+    print(subset[numericas].mean())  # Promedio
+    for col in categoricas:  # Categorías
+        print(col)  # Nombre
+        print(subset[col].value_counts().head(3))  # Top
